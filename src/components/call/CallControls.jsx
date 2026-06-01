@@ -1,6 +1,8 @@
 import { useCallContext } from "../../context/CallContext";
-import { useSelector }    from "react-redux";
-import Tooltip            from "../ui/Tooltip";
+import { useSelector } from "react-redux";
+import Tooltip from "../ui/Tooltip";
+import endcall from "../../assets/end-call-ring.mp3";
+import {MdCallEnd,MdComputer,MdMicOff,MdVideo,MdVideoOff} from "react-icons/md";
 
 function CallControls() {
   const {
@@ -8,19 +10,37 @@ function CallControls() {
     handleToggleAudio,
     handleToggleVideo,
     handleScreenShare,
-  }                 = useCallContext();
+  } = useCallContext();
+
   const {
     isAudioMuted,
     isVideoMuted,
     isScreenSharing,
     activeCall,
-  }                 = useSelector((state) => state.call);
+  } = useSelector((state) => state.call);
 
   const isVideoCall = activeCall?.callType === "video";
 
+  const handleHangUp = () => {
+    const audio = new Audio(endcall);
+
+    audio.play().catch((err) => {
+      console.log("End call sound failed:", err);
+      hangUp();
+    });
+
+    audio.onended = () => {
+      hangUp();
+    };
+
+    // Fallback in case onended doesn't fire
+    setTimeout(() => {
+      hangUp();
+    }, 1500);
+  };
+
   return (
     <div className="flex items-center justify-center gap-4 py-6 bg-gray-900/80 backdrop-blur-sm rounded-2xl px-8">
-
       {/* Mute Audio */}
       <Tooltip text={isAudioMuted ? "Unmute" : "Mute"}>
         <button
@@ -31,11 +51,11 @@ function CallControls() {
               : "bg-white/20 hover:bg-white/30 text-white"
           }`}
         >
-          {isAudioMuted ? "🔇" : "🎙️"}
+          {isAudioMuted ? <MdMicOff /> : <MdMic />}
         </button>
       </Tooltip>
 
-      {/* Mute Video (video calls only) */}
+      {/* Mute Video */}
       {isVideoCall && (
         <Tooltip text={isVideoMuted ? "Turn on camera" : "Turn off camera"}>
           <button
@@ -46,12 +66,12 @@ function CallControls() {
                 : "bg-white/20 hover:bg-white/30 text-white"
             }`}
           >
-            {isVideoMuted ? "📷" : "📹"}
+            {isVideoMuted ? <MdVideoOff /> : <MdVideo />}
           </button>
         </Tooltip>
       )}
 
-      {/* Screen Share (video calls only) */}
+      {/* Screen Share */}
       {isVideoCall && (
         <Tooltip text={isScreenSharing ? "Stop sharing" : "Share screen"}>
           <button
@@ -62,7 +82,7 @@ function CallControls() {
                 : "bg-white/20 hover:bg-white/30 text-white"
             }`}
           >
-            🖥️
+            <MdComputer />
           </button>
         </Tooltip>
       )}
@@ -70,10 +90,10 @@ function CallControls() {
       {/* End Call */}
       <Tooltip text="End Call">
         <button
-          onClick={hangUp}
+          onClick={handleHangUp}
           className="w-16 h-16 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition active:scale-95"
         >
-          📵
+          <MdCallEnd />
         </button>
       </Tooltip>
     </div>
