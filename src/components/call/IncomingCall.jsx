@@ -1,10 +1,48 @@
-import { useSelector }    from "react-redux";
+import { useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 import { useCallContext } from "../../context/CallContext";
-import Avatar             from "../ui/Avatar";
+import Avatar from "../ui/Avatar";
+import ringtone from "../../assets/video-audio-ring.mp3";
 
 function IncomingCall() {
-  const { incomingCall }          = useSelector((state) => state.call);
+  const { incomingCall } = useSelector((state) => state.call);
   const { acceptCall, rejectCall } = useCallContext();
+
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (incomingCall) {
+      audioRef.current = new Audio(ringtone);
+      audioRef.current.loop = true;
+
+      audioRef.current
+        .play()
+        .catch((err) => console.log("Audio autoplay blocked:", err));
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, [incomingCall]);
+
+  const handleAccept = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    acceptCall();
+  };
+
+  const handleReject = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    rejectCall();
+  };
 
   if (!incomingCall) return null;
 
@@ -19,7 +57,6 @@ function IncomingCall() {
               name={incomingCall.callerName}
               size="xl"
             />
-            {/* Ripple Effect */}
             <div className="absolute inset-0 rounded-full border-4 border-yellow-300 animate-ping opacity-50" />
           </div>
         </div>
@@ -28,19 +65,18 @@ function IncomingCall() {
         <p className="text-gray-500 text-sm font-medium mb-1">
           Incoming {incomingCall.callType} call
         </p>
+
         <h2 className="text-2xl font-bold text-gray-800 mb-1">
           {incomingCall.callerName}
         </h2>
-        <p className="text-yellow-500 text-sm mb-8">
-          {incomingCall.callType === "video" ? "📹 Video Call" : "🎙️ Audio Call"}
-        </p>
+
+        <p className="text-green-500 text-sm mb-8 animate-pulse">Ringing...</p>
 
         {/* Action Buttons */}
         <div className="flex items-center justify-center gap-8">
-          {/* Reject */}
           <div className="flex flex-col items-center gap-2">
             <button
-              onClick={rejectCall}
+              onClick={handleReject}
               className="w-16 h-16 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition active:scale-95"
             >
               📵
@@ -48,10 +84,9 @@ function IncomingCall() {
             <span className="text-xs text-gray-500 font-medium">Decline</span>
           </div>
 
-          {/* Accept */}
           <div className="flex flex-col items-center gap-2">
             <button
-              onClick={acceptCall}
+              onClick={handleAccept}
               className="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition active:scale-95"
             >
               📞
