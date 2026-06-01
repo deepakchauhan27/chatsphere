@@ -4,7 +4,7 @@ import { useCallContext } from "../../context/CallContext";
 import Avatar from "../ui/Avatar";
 import ringtone from "../../assets/video-audio-ring.mp3";
 import { MdCallEnd, MdCall } from "react-icons/md";
-import endcall from "../../assets/end-ring.mp3";
+import endcall from "../../assets/end-call-ring.mp3";
 
 function IncomingCall() {
   const { incomingCall } = useSelector((state) => state.call);
