@@ -3,6 +3,8 @@ import { useSelector } from "react-redux";
 import { useCallContext } from "../../context/CallContext";
 import Avatar from "../ui/Avatar";
 import ringtone from "../../assets/video-audio-ring.mp3";
+import { MdCallEnd, MdCall } from "react-icons/md";
+import endcall from "../../assets/end-ring.mp3";
 
 function IncomingCall() {
   const { incomingCall } = useSelector((state) => state.call);
@@ -37,11 +39,28 @@ function IncomingCall() {
   };
 
   const handleReject = () => {
+    // Stop incoming ringtone
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
-    rejectCall();
+
+    // Play end call sound
+    const endAudio = new Audio(endCallSound);
+
+    endAudio.play().catch((err) => {
+      console.log("End call audio failed:", err);
+      rejectCall();
+    });
+
+    endAudio.onended = () => {
+      rejectCall();
+    };
+
+    // Fallback
+    setTimeout(() => {
+      rejectCall();
+    }, 1500);
   };
 
   if (!incomingCall) return null;
@@ -79,7 +98,7 @@ function IncomingCall() {
               onClick={handleReject}
               className="w-16 h-16 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition active:scale-95"
             >
-              📵
+              <MdCallEnd />
             </button>
             <span className="text-xs text-gray-500 font-medium">Decline</span>
           </div>
@@ -89,7 +108,7 @@ function IncomingCall() {
               onClick={handleAccept}
               className="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition active:scale-95"
             >
-              📞
+              <MdCall />
             </button>
             <span className="text-xs text-gray-500 font-medium">Accept</span>
           </div>
