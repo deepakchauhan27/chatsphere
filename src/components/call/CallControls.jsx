@@ -2,22 +2,20 @@ import { useCallContext } from "../../context/CallContext";
 import { useSelector } from "react-redux";
 import Tooltip from "../ui/Tooltip";
 import endcall from "../../assets/end-call-ring.mp3";
-import {MdCallEnd,MdComputer,MdMicOff,MdVideo,MdVideoOff} from "react-icons/md";
+import {
+  MdCallEnd,
+  MdComputer,
+  MdMicOff,
+  MdVideocam,
+  MdOutlineVideocamOff,
+} from "react-icons/md";
 
 function CallControls() {
-  const {
-    hangUp,
-    handleToggleAudio,
-    handleToggleVideo,
-    handleScreenShare,
-  } = useCallContext();
+  const { hangUp, handleToggleAudio, handleToggleVideo, handleScreenShare } =
+    useCallContext();
 
-  const {
-    isAudioMuted,
-    isVideoMuted,
-    isScreenSharing,
-    activeCall,
-  } = useSelector((state) => state.call);
+  const { isAudioMuted, isVideoMuted, isScreenSharing, activeCall } =
+    useSelector((state) => state.call);
 
   const isVideoCall = activeCall?.callType === "video";
 
@@ -66,7 +64,7 @@ function CallControls() {
                 : "bg-white/20 hover:bg-white/30 text-white"
             }`}
           >
-            {isVideoMuted ? <MdVideoOff /> : <MdVideo />}
+            {isVideoMuted ? <MdOutlineVideocamOff /> : <MdVideocam />}
           </button>
         </Tooltip>
       )}
