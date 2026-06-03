@@ -1,12 +1,6 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getSocket }            from "../socket/socket";
+import { getSocket } from "../socket/socket";
 import {
   setActiveCall,
   setCallConnected,
@@ -40,17 +34,17 @@ import {
 const CallContext = createContext();
 
 export const CallProvider = ({ children }) => {
-  const dispatch   = useDispatch();
-  const { user }   = useSelector((state) => state.auth);
-  const callState  = useSelector((state) => state.call);
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const callState = useSelector((state) => state.call);
 
-  const localStreamRef  = useRef(null);
+  const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
-  const timerRef        = useRef(null);
-  const callStartRef    = useRef(null);
+  const timerRef = useRef(null);
+  const callStartRef = useRef(null);
 
-  const [localStream,  setLocalStream]  = useState(null);
+  const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
 
   // ── WebRTC Socket Events ───────────────────────────
@@ -101,7 +95,12 @@ export const CallProvider = ({ children }) => {
   }, [callState.callStatus, dispatch]);
 
   // ── Initiate Call ──────────────────────────────────
-  const initiateCall = async ({ receiverId, receiverName, receiverAvatar, callType }) => {
+  const initiateCall = async ({
+    receiverId,
+    receiverName,
+    receiverAvatar,
+    callType,
+  }) => {
     try {
       const stream = await getUserMedia(callType);
       localStreamRef.current = stream;
@@ -116,37 +115,40 @@ export const CallProvider = ({ children }) => {
         (remoteStream) => {
           remoteStreamRef.current = remoteStream;
           setRemoteStream(remoteStream);
-        }
+        },
       );
 
       addLocalStream(stream);
 
-      dispatch(setActiveCall({ receiverId, receiverName, receiverAvatar, callType }));
+      dispatch(
+        setActiveCall({ receiverId, receiverName, receiverAvatar, callType }),
+      );
 
       const socket = getSocket();
       socket?.emit("call:initiate", {
         receiverId,
         callType,
-        callerId:     user._id,
-        callerName:   user.name,
+        callerId: user._id,
+        callerName: user.name,
         callerAvatar: user.avatar,
       });
 
       // Get callId back from server
       socket?.once("call:callId", async ({ callId }) => {
-        dispatch(setActiveCall({
-          receiverId,
-          receiverName,
-          receiverAvatar,
-          callType,
-          callId,
-        }));
+        dispatch(
+          setActiveCall({
+            receiverId,
+            receiverName,
+            receiverAvatar,
+            callType,
+            callId,
+          }),
+        );
 
         // Create and send offer
         const offer = await createOffer();
         socket?.emit("webrtc:offer", { offer, receiverId });
       });
-
     } catch (error) {
       console.error("Error initiating call:", error);
       dispatch(setCallStatus("error"));
@@ -172,18 +174,25 @@ export const CallProvider = ({ children }) => {
         (remoteStream) => {
           remoteStreamRef.current = remoteStream;
           setRemoteStream(remoteStream);
-        }
+        },
       );
 
       addLocalStream(stream);
-      dispatch(setCallConnected());
+      dispatch(
+        setActiveCall({
+          receiverId: incomingCall.callerId,
+          receiverName: incomingCall.callerName,
+          receiverAvatar: incomingCall.callerAvatar,
+          callType: incomingCall.callType,
+          callId: incomingCall.callId,
+        }),
+      );
 
       const socket = getSocket();
       socket?.emit("call:accepted", {
-        callId:   incomingCall.callId,
+        callId: incomingCall.callId,
         callerId: incomingCall.callerId,
       });
-
     } catch (error) {
       console.error("Error accepting call:", error);
     }
@@ -194,7 +203,7 @@ export const CallProvider = ({ children }) => {
     const { incomingCall } = callState;
     const socket = getSocket();
     socket?.emit("call:rejected", {
-      callId:   incomingCall?.callId,
+      callId: incomingCall?.callId,
       callerId: incomingCall?.callerId,
     });
     dispatch(setIncomingCall(null));
@@ -207,28 +216,30 @@ export const CallProvider = ({ children }) => {
     const socket = getSocket();
 
     socket?.emit("call:ended", {
-      callId:     activeCall?.callId || incomingCall?.callId,
+      callId: activeCall?.callId || incomingCall?.callId,
       receiverId: activeCall?.receiverId,
-      callerId:   incomingCall?.callerId,
+      callerId: incomingCall?.callerId,
     });
 
     // Save call log
-    dispatch(saveCallLog({
-      receiverId: activeCall?.receiverId || incomingCall?.callerId,
-      type:       activeCall?.callType   || incomingCall?.callType,
-      status:     "ended",
-      duration:   callDuration,
-      startedAt:  callStartRef.current
-        ? new Date(callStartRef.current).toISOString()
-        : null,
-      endedAt: new Date().toISOString(),
-    }));
+    dispatch(
+      saveCallLog({
+        receiverId: activeCall?.receiverId || incomingCall?.callerId,
+        type: activeCall?.callType || incomingCall?.callType,
+        status: "ended",
+        duration: callDuration,
+        startedAt: callStartRef.current
+          ? new Date(callStartRef.current).toISOString()
+          : null,
+        endedAt: new Date().toISOString(),
+      }),
+    );
 
     // Cleanup
     stopMediaStream(localStreamRef.current);
     stopMediaStream(remoteStreamRef.current);
     stopMediaStream(screenStreamRef.current);
-    localStreamRef.current  = null;
+    localStreamRef.current = null;
     remoteStreamRef.current = null;
     screenStreamRef.current = null;
     setLocalStream(null);
@@ -258,7 +269,10 @@ export const CallProvider = ({ children }) => {
         const screenStream = await getScreenShare();
         screenStreamRef.current = screenStream;
 
-        const pc = createPeerConnection(() => {}, () => {});
+        const pc = createPeerConnection(
+          () => {},
+          () => {},
+        );
         await replaceVideoTrack(pc, screenStream);
 
         // Stop screen share when user clicks browser stop button
@@ -272,7 +286,10 @@ export const CallProvider = ({ children }) => {
       }
     } else {
       // Switch back to camera
-      const pc = createPeerConnection(() => {}, () => {});
+      const pc = createPeerConnection(
+        () => {},
+        () => {},
+      );
       await replaceVideoTrack(pc, localStreamRef.current);
       stopMediaStream(screenStreamRef.current);
       screenStreamRef.current = null;
