@@ -8,6 +8,7 @@ import {
   MdMicOff,
   MdVideocam,
   MdOutlineVideocamOff,
+  MdMic,
 } from "react-icons/md";
 
 function CallControls() {
