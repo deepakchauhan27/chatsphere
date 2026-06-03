@@ -1,8 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import callService from "../services/callService";
 
-// ── Async Thunks ────────────────────────────────────
-
 export const saveCallLog = createAsyncThunk(
   "call/saveLog",
   async (logData, thunkAPI) => {
@@ -29,64 +27,43 @@ export const fetchCallHistory = createAsyncThunk(
   }
 );
 
-// ── Initial State ───────────────────────────────────
-
 const initialState = {
-  // Incoming call state
-  incomingCall: null,       // { callId, callType, callerId, callerName, callerAvatar }
-
-  // Active call state
-  activeCall: null,         // { callId, callType, receiverId, receiverName, receiverAvatar }
-
-  // Call status
-  callStatus: "idle",       // idle | ringing | calling | connected | ended
-
-  // Media state
-  isAudioMuted:   false,
-  isVideoMuted:   false,
-  isScreenSharing: false,
-
-  // Call duration
-  callDuration: 0,          // in seconds
-  callStartTime: null,
-
-  // Call history
-  callHistory:  [],
-  historyLoading: false,
-
-  error: null,
+  incomingCall:     null,
+  activeCall:       null,
+  callStatus:       "idle",
+  isAudioMuted:     false,
+  isVideoMuted:     false,
+  isScreenSharing:  false,
+  callDuration:     0,
+  callStartTime:    null,
+  callHistory:      [],
+  historyLoading:   false,
+  error:            null,
 };
-
-// ── Slice ───────────────────────────────────────────
 
 const callSlice = createSlice({
   name: "call",
   initialState,
   reducers: {
-
-    // ── Incoming Call ──────────────────────────────
     setIncomingCall: (state, action) => {
       state.incomingCall = action.payload;
-      state.callStatus   = "ringing";
+      if (action.payload) state.callStatus = "ringing";
     },
 
     clearIncomingCall: (state) => {
       state.incomingCall = null;
     },
 
-    // ── Outgoing Call ──────────────────────────────
     setActiveCall: (state, action) => {
       state.activeCall = action.payload;
-      state.callStatus = "calling";
+      if (action.payload) state.callStatus = "calling";
     },
 
-    // ── Call Accepted ──────────────────────────────
     setCallConnected: (state) => {
       state.callStatus   = "connected";
       state.callStartTime = Date.now();
     },
 
-    // ── Call Ended ─────────────────────────────────
     endCall: (state) => {
       state.incomingCall    = null;
       state.activeCall      = null;
@@ -98,7 +75,6 @@ const callSlice = createSlice({
       state.callStartTime   = null;
     },
 
-    // ── Media Controls ─────────────────────────────
     toggleAudioMute: (state) => {
       state.isAudioMuted = !state.isAudioMuted;
     },
@@ -111,15 +87,6 @@ const callSlice = createSlice({
       state.isScreenSharing = !state.isScreenSharing;
     },
 
-    setAudioMuted: (state, action) => {
-      state.isAudioMuted = action.payload;
-    },
-
-    setVideoMuted: (state, action) => {
-      state.isVideoMuted = action.payload;
-    },
-
-    // ── Call Duration ──────────────────────────────
     setCallDuration: (state, action) => {
       state.callDuration = action.payload;
     },
@@ -128,7 +95,6 @@ const callSlice = createSlice({
       state.callDuration += 1;
     },
 
-    // ── Call Status ────────────────────────────────
     setCallStatus: (state, action) => {
       state.callStatus = action.payload;
     },
@@ -140,13 +106,9 @@ const callSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-
-      // ── Save Call Log ─────────────────────────────
       .addCase(saveCallLog.fulfilled, (state, action) => {
         state.callHistory = [action.payload, ...state.callHistory];
       })
-
-      // ── Fetch Call History ────────────────────────
       .addCase(fetchCallHistory.pending, (state) => {
         state.historyLoading = true;
       })
@@ -170,8 +132,6 @@ export const {
   toggleAudioMute,
   toggleVideoMute,
   toggleScreenShare,
-  setAudioMuted,
-  setVideoMuted,
   setCallDuration,
   incrementDuration,
   setCallStatus,
