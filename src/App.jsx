@@ -11,6 +11,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
 import { CallProvider } from "./context/CallContext";
 import CallScreen from "./components/call/CallScreen";
+import IncomingCall from "./components/call/IncomingCall";
 
 // ── Protected Route ──────────────────────────────────
 const ProtectedRoute = ({ children }) => {
@@ -122,9 +123,13 @@ function App() {
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          {(activeCall || incomingCall) && callStatus !== "idle" && (
-            <CallScreen />
+          {/* Incoming Call Popup */}
+          {incomingCall && !activeCall && callStatus === "ringing" && (
+            <IncomingCall />
           )}
+
+          {/* Active Call Screen */}
+          {activeCall && callStatus !== "idle" && <CallScreen />}
         </CallProvider>
       </SocketProvider>
     </AuthProvider>
