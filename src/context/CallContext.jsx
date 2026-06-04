@@ -62,8 +62,22 @@ export const CallProvider = ({ children }) => {
     try {
       const constraints =
         callType === "audio"
-          ? { audio: true, video: false }
-          : { audio: true, video: true };
+          ? {
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              },
+              video: false,
+            }
+          : {
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              },
+              video: true,
+            };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       console.log(
@@ -135,6 +149,10 @@ export const CallProvider = ({ children }) => {
   // ── Add Local Tracks to PC ─────────────────────────
   const addTracks = (stream) => {
     if (!pcRef.current || !stream) return;
+    console.log(
+      "ADDING TRACKS:",
+      stream.getTracks().map((t) => t.kind),
+    );
     stream.getTracks().forEach((track) => {
       pcRef.current.addTrack(track, stream);
     });
