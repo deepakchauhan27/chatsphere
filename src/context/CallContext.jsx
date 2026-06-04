@@ -7,7 +7,7 @@ import {
   useCallback,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getSocket }               from "../socket/socket";
+import { getSocket } from "../socket/socket";
 import {
   setActiveCall,
   setCallConnected,
@@ -24,45 +24,57 @@ const CallContext = createContext();
 
 const ICE_SERVERS = {
   iceServers: [
-    { urls: "stun:stun.l.google.com:19302"  },
+    { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     {
-      urls:       "turn:openrelay.metered.ca:80",
-      username:   "openrelayproject",
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
       credential: "openrelayproject",
     },
     {
-      urls:       "turn:openrelay.metered.ca:443",
-      username:   "openrelayproject",
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
       credential: "openrelayproject",
     },
   ],
 };
 
 export const CallProvider = ({ children }) => {
-  const dispatch  = useDispatch();
-  const { user }  = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
   const callState = useSelector((state) => state.call);
 
-  const [localStream,  setLocalStream]  = useState(null);
+  const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
 
-  const pcRef           = useRef(null);
-  const localStreamRef  = useRef(null);
+  const pcRef = useRef(null);
+  const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
-  const timerRef        = useRef(null);
-  const callStartRef    = useRef(null);
-  const callIdRef       = useRef(null);
-  const targetIdRef     = useRef(null);
+  const timerRef = useRef(null);
+  const callStartRef = useRef(null);
+  const callIdRef = useRef(null);
+  const targetIdRef = useRef(null);
+  const callerIdRef = useRef(null);
+  const pendingCandidatesRef = useRef([]);
 
   // ── Get Media Stream ───────────────────────────────
   const getMedia = async (callType) => {
     try {
-      const constraints = callType === "audio"
-        ? { audio: true, video: false }
-        : { audio: true, video: true };
+      const constraints =
+        callType === "audio"
+          ? { audio: true, video: false }
+          : { audio: true, video: true };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log(
+        "LOCAL TRACKS:",
+        stream.getTracks().map((t) => ({
+          kind: t.kind,
+          enabled: t.enabled,
+          muted: t.muted,
+          readyState: t.readyState,
+        })),
+      );
       return stream;
     } catch (err) {
       console.error("Media error:", err);
@@ -71,50 +83,54 @@ export const CallProvider = ({ children }) => {
   };
 
   // ── Create Peer Connection ─────────────────────────
-  const createPC = useCallback((targetId) => {
-    // Close existing
-    if (pcRef.current) {
-      pcRef.current.close();
-      pcRef.current = null;
-    }
-
-    const pc = new RTCPeerConnection(ICE_SERVERS);
-    pcRef.current  = pc;
-    targetIdRef.current = targetId;
-
-    // ICE candidates
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        const socket = getSocket();
-        socket?.emit("webrtc:ice", {
-          candidate: event.candidate,
-          targetId,
-        });
+  const createPC = useCallback(
+    (targetId) => {
+      // Close existing
+      if (pcRef.current) {
+        pcRef.current.close();
+        pcRef.current = null;
       }
-    };
 
-    // Remote stream
-    pc.ontrack = (event) => {
-      console.log("Remote track received");
-      const stream = event.streams[0];
-      remoteStreamRef.current = stream;
-      setRemoteStream(stream);
-      dispatch(setCallConnected());
-    };
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pcRef.current = pc;
+      targetIdRef.current = targetId;
 
-    pc.onconnectionstatechange = () => {
-      console.log("PC state:", pc.connectionState);
-      if (pc.connectionState === "failed") {
-        dispatch(setCallStatus("failed"));
-      }
-    };
+      // ICE candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          const socket = getSocket();
+          socket?.emit("webrtc:ice", {
+            candidate: event.candidate,
+            targetId,
+          });
+        }
+      };
 
-    pc.oniceconnectionstatechange = () => {
-      console.log("ICE state:", pc.iceConnectionState);
-    };
+      // Remote stream
+      pc.ontrack = (event) => {
+        console.log("===== REMOTE TRACK RECEIVED =====");
+        console.log(event.streams);
+        console.log(event.track.kind);
 
-    return pc;
-  }, [dispatch]);
+        const stream = event.streams[0];
+        remoteStreamRef.current = stream;
+        setRemoteStream(stream);
+
+        dispatch(setCallConnected());
+      };
+
+      pc.onconnectionstatechange = () => {
+        console.log("PC STATE:", pc.connectionState);
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        console.log("ICE STATE:", pc.iceConnectionState);
+      };
+
+      return pc;
+    },
+    [dispatch],
+  );
 
   // ── Add Local Tracks to PC ─────────────────────────
   const addTracks = (stream) => {
@@ -147,7 +163,7 @@ export const CallProvider = ({ children }) => {
 
     setLocalStream(null);
     setRemoteStream(null);
-    callIdRef.current   = null;
+    callIdRef.current = null;
     targetIdRef.current = null;
   }, []);
 
@@ -179,18 +195,35 @@ export const CallProvider = ({ children }) => {
     // Receive WebRTC offer (receiver side)
     socket.on("webrtc:offer", async ({ offer }) => {
       console.log("Received offer");
+      console.log("===== RECEIVED OFFER =====");
+
       if (!pcRef.current) return;
+
       try {
         await pcRef.current.setRemoteDescription(
-          new RTCSessionDescription(offer)
+          new RTCSessionDescription(offer),
         );
+
+        // Add queued ICE candidates after remote description is set
+        for (const candidate of pendingCandidatesRef.current) {
+          try {
+            await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            console.error("Pending ICE error:", err);
+          }
+        }
+
+        pendingCandidatesRef.current = [];
+
         const answer = await pcRef.current.createAnswer();
+
         await pcRef.current.setLocalDescription(answer);
 
         const socket = getSocket();
+
         socket?.emit("webrtc:answer", {
           answer,
-          callerId: callState.incomingCall?.callerId,
+          callerId: callerIdRef.current,
         });
       } catch (err) {
         console.error("Offer handling error:", err);
@@ -199,24 +232,46 @@ export const CallProvider = ({ children }) => {
 
     // Receive WebRTC answer (caller side)
     socket.on("webrtc:answer", async ({ answer }) => {
-      console.log("Received answer");
+      console.log("===== RECEIVED ANSWER =====");
+
       if (!pcRef.current) return;
+
       try {
         await pcRef.current.setRemoteDescription(
-          new RTCSessionDescription(answer)
+          new RTCSessionDescription(answer),
         );
+
+        // Add queued ICE candidates after remote description is available
+        for (const candidate of pendingCandidatesRef.current) {
+          try {
+            await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            console.error("Pending ICE error:", err);
+          }
+        }
+
+        pendingCandidatesRef.current = [];
+
+        console.log("Remote description set successfully");
       } catch (err) {
         console.error("Answer handling error:", err);
       }
     });
-
     // Receive ICE candidate
     socket.on("webrtc:ice", async ({ candidate }) => {
       if (!pcRef.current) return;
+
       try {
-        await pcRef.current.addIceCandidate(
-          new RTCIceCandidate(candidate)
-        );
+        if (!pcRef.current.remoteDescription) {
+          console.log("Queueing ICE candidate");
+
+          pendingCandidatesRef.current.push(candidate);
+          return;
+        }
+
+        await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+
+        console.log("ICE candidate added");
       } catch (err) {
         console.error("ICE error:", err);
       }
@@ -235,6 +290,7 @@ export const CallProvider = ({ children }) => {
           offer,
           receiverId: targetIdRef.current,
         });
+        console.log("OFFER SENT TO:", targetIdRef.current);
       } catch (err) {
         console.error("Offer creation error:", err);
       }
@@ -300,23 +356,24 @@ export const CallProvider = ({ children }) => {
       const pc = createPC(receiverId);
       addTracks(stream);
 
-      dispatch(setActiveCall({
-        receiverId,
-        receiverName,
-        receiverAvatar,
-        callType,
-        callId: null,
-      }));
+      dispatch(
+        setActiveCall({
+          receiverId,
+          receiverName,
+          receiverAvatar,
+          callType,
+          callId: null,
+        }),
+      );
 
       const socket = getSocket();
       socket?.emit("call:initiate", {
         receiverId,
         callType,
-        callerId:     user._id,
-        callerName:   user.name,
+        callerId: user._id,
+        callerName: user.name,
         callerAvatar: user.avatar,
       });
-
     } catch (error) {
       console.error("Initiate call error:", error);
       dispatch(setCallStatus("error"));
@@ -341,20 +398,23 @@ export const CallProvider = ({ children }) => {
 
       const socket = getSocket();
       socket?.emit("call:accepted", {
-        callId:   incomingCall.callId,
+        callId: incomingCall.callId,
         callerId: incomingCall.callerId,
       });
 
-      dispatch(setActiveCall({
-        receiverId:     incomingCall.callerId,
-        receiverName:   incomingCall.callerName,
-        receiverAvatar: incomingCall.callerAvatar,
-        callType:       incomingCall.callType,
-        callId:         incomingCall.callId,
-      }));
+      callerIdRef.current = incomingCall.callerId;
+
+      dispatch(
+        setActiveCall({
+          receiverId: incomingCall.callerId,
+          receiverName: incomingCall.callerName,
+          receiverAvatar: incomingCall.callerAvatar,
+          callType: incomingCall.callType,
+          callId: incomingCall.callId,
+        }),
+      );
 
       dispatch(setIncomingCall(null));
-
     } catch (error) {
       console.error("Accept call error:", error);
       dispatch(setCallStatus("error"));
@@ -369,7 +429,7 @@ export const CallProvider = ({ children }) => {
 
     const socket = getSocket();
     socket?.emit("call:rejected", {
-      callId:   incomingCall.callId,
+      callId: incomingCall.callId,
       callerId: incomingCall.callerId,
     });
 
@@ -384,23 +444,25 @@ export const CallProvider = ({ children }) => {
     const socket = getSocket();
 
     socket?.emit("call:ended", {
-      callId:     callIdRef.current || activeCall?.callId,
+      callId: callIdRef.current || activeCall?.callId,
       receiverId: activeCall?.receiverId,
-      callerId:   user._id,
+      callerId: user._id,
     });
 
     // Save call log
     if (activeCall?.receiverId) {
-      dispatch(saveCallLog({
-        receiverId: activeCall.receiverId,
-        type:       activeCall.callType,
-        status:     "ended",
-        duration:   callDuration,
-        startedAt:  callStartRef.current
-          ? new Date(callStartRef.current).toISOString()
-          : null,
-        endedAt: new Date().toISOString(),
-      }));
+      dispatch(
+        saveCallLog({
+          receiverId: activeCall.receiverId,
+          type: activeCall.callType,
+          status: "ended",
+          duration: callDuration,
+          startedAt: callStartRef.current
+            ? new Date(callStartRef.current).toISOString()
+            : null,
+          endedAt: new Date().toISOString(),
+        }),
+      );
     }
 
     dispatch(setCallStatus("ended"));

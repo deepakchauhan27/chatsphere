@@ -17,10 +17,8 @@ function IncomingCall() {
 
     const audio = new Audio(ringtone);
     audio.loop = true;
-    audio.volume = 1;
 
-    audio
-      .play()
+    audio.play()
       .then(() => console.log("Ringtone playing"))
       .catch((err) => console.log("Ringtone blocked:", err));
 

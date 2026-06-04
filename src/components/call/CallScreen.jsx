@@ -1,40 +1,35 @@
-import { useEffect }              from "react";
-import { useSelector }            from "react-redux";
-import { useCallContext }         from "../../context/CallContext";
-import VideoPlayer                from "./VideoPlayer";
-import CallControls               from "./CallControls";
-import CallTimer                  from "./CallTimer";
-import Avatar                     from "../ui/Avatar";
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import { useCallContext } from "../../context/CallContext";
+import VideoPlayer from "./VideoPlayer";
+import CallControls from "./CallControls";
+import CallTimer from "./CallTimer";
+import Avatar from "../ui/Avatar";
+import AudioCall from "./AudioCall";
 
 function CallScreen() {
-  const {
-    activeCall,
-    incomingCall,
-    callStatus,
-    isVideoMuted,
-  } = useSelector((state) => state.call);
+  const { activeCall, incomingCall, callStatus, isVideoMuted } = useSelector(
+    (state) => state.call,
+  );
 
   const { localStream, remoteStream } = useCallContext();
 
   const isVideoCall =
-    activeCall?.callType === "video" ||
-    incomingCall?.callType === "video";
+    activeCall?.callType === "video" || incomingCall?.callType === "video";
 
   const otherUser = activeCall
-    ? { name: activeCall.receiverName,  avatar: activeCall.receiverAvatar }
+    ? { name: activeCall.receiverName, avatar: activeCall.receiverAvatar }
     : { name: incomingCall?.callerName, avatar: incomingCall?.callerAvatar };
 
   // Only show if there is an active call
   if (!activeCall && !incomingCall) return null;
-  if (callStatus === "idle")        return null;
+  if (callStatus === "idle") return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
-
       {isVideoCall ? (
         /* ── Video Call ─────────────────────────── */
         <div className="relative flex-1 bg-black">
-
           {/* Remote Video */}
           {remoteStream ? (
             <VideoPlayer
@@ -58,11 +53,7 @@ function CallScreen() {
           {/* Local Video PiP */}
           {localStream && !isVideoMuted && (
             <div className="absolute top-4 right-4 z-10 rounded-2xl overflow-hidden shadow-2xl border-2 border-yellow-300">
-              <VideoPlayer
-                stream={localStream}
-                muted
-                isLocal
-              />
+              <VideoPlayer stream={localStream} muted isLocal />
             </div>
           )}
 
@@ -79,7 +70,6 @@ function CallScreen() {
             <CallControls />
           </div>
         </div>
-
       ) : (
         /* ── Audio Call ─────────────────────────── */
         <div
@@ -88,35 +78,10 @@ function CallScreen() {
             background: "linear-gradient(135deg, #fbbf24 0%, #92400e 100%)",
           }}
         >
-          {/* Top: Other User */}
-          <div className="flex flex-col items-center gap-4 mt-10">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/50 shadow-2xl">
-                {otherUser?.avatar ? (
-                  <img
-                    src={otherUser.avatar}
-                    alt={otherUser.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-yellow-300 flex items-center justify-center text-yellow-900 text-5xl font-bold">
-                    {otherUser?.name?.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              {callStatus === "connected" && (
-                <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping" />
-              )}
-            </div>
-
-            <h2 className="text-3xl font-bold text-white">
-              {otherUser?.name}
-            </h2>
-            <CallTimer />
+          <div className="mt-10">
+            <AudioCall />
           </div>
-
-          {/* Bottom: Controls */}
-          <CallControls />
+          {/* Top: Other User */}
         </div>
       )}
     </div>
