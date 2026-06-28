@@ -32,6 +32,8 @@ function ChatHeader() {
 
   const handleAudioCall = () => {
     if (!partner) return;
+      console.log("Audio button clicked");
+
     initiateCall({
       receiverId:     partner._id,
       receiverName:   partner.name,
@@ -42,6 +44,8 @@ function ChatHeader() {
 
   const handleVideoCall = () => {
     if (!partner) return;
+      console.log("Video button clicked");
+
     initiateCall({
       receiverId:     partner._id,
       receiverName:   partner.name,

@@ -212,11 +212,17 @@ export const CallProvider = ({ children }) => {
   // ── Socket Event Listeners ─────────────────────────
   useEffect(() => {
     if (!user) return;
+
     const socket = getSocket();
     if (!socket) return;
 
+    socket.off("call:accepted");
+    socket.off("webrtc:offer");
+    socket.off("webrtc:answer");
+    socket.off("webrtc:ice");
+
     // Receive callId after initiating
-    socket.on("call:callId", ({ callId }) => {
+    socket.on("call:accepted", async ({ callId }) => {
       console.log("Got callId:", callId);
       callIdRef.current = callId;
     });
