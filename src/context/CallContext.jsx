@@ -211,15 +211,21 @@ export const CallProvider = ({ children }) => {
 
   // ── Socket Event Listeners ─────────────────────────
   useEffect(() => {
+    console.log("Registering CallContext listeners");
     if (!user) return;
 
     const socket = getSocket();
     if (!socket) return;
 
-    socket.off("call:accepted");
     socket.off("webrtc:offer");
     socket.off("webrtc:answer");
     socket.off("webrtc:ice");
+    socket.off("call:accepted");
+    socket.off("call:rejected");
+    socket.off("call:ended");
+    socket.off("call:busy");
+    socket.off("call:timeout");
+    socket.off("call:callId");
 
     // Receive callId after initiating
     socket.on("call:accepted", async ({ callId }) => {
@@ -228,6 +234,15 @@ export const CallProvider = ({ children }) => {
     });
 
     // Receive WebRTC offer (receiver side)
+    socket.off("webrtc:offer");
+    socket.off("webrtc:answer");
+    socket.off("webrtc:ice");
+    socket.off("call:accepted");
+    socket.off("call:rejected");
+    socket.off("call:ended");
+    socket.off("call:busy");
+    socket.off("call:timeout");
+    socket.off("call:callId");
     socket.on("webrtc:offer", async ({ offer }) => {
       console.log("Received offer");
       console.log("===== RECEIVED OFFER =====");
@@ -265,6 +280,15 @@ export const CallProvider = ({ children }) => {
       }
     });
 
+    socket.off("webrtc:offer");
+    socket.off("webrtc:answer");
+    socket.off("webrtc:ice");
+    socket.off("call:accepted");
+    socket.off("call:rejected");
+    socket.off("call:ended");
+    socket.off("call:busy");
+    socket.off("call:timeout");
+    socket.off("call:callId");
     // Receive WebRTC answer (caller side)
     socket.on("webrtc:answer", async ({ answer }) => {
       console.log("===== RECEIVED ANSWER =====");
@@ -293,6 +317,15 @@ export const CallProvider = ({ children }) => {
       }
     });
     // Receive ICE candidate
+    socket.off("webrtc:offer");
+    socket.off("webrtc:answer");
+    socket.off("webrtc:ice");
+    socket.off("call:accepted");
+    socket.off("call:rejected");
+    socket.off("call:ended");
+    socket.off("call:busy");
+    socket.off("call:timeout");
+    socket.off("call:callId");
     socket.on("webrtc:ice", async ({ candidate }) => {
       if (!pcRef.current) return;
 
@@ -313,6 +346,15 @@ export const CallProvider = ({ children }) => {
     });
 
     // Call accepted (caller side)
+    socket.off("webrtc:offer");
+    socket.off("webrtc:answer");
+    socket.off("webrtc:ice");
+    socket.off("call:accepted");
+    socket.off("call:rejected");
+    socket.off("call:ended");
+    socket.off("call:busy");
+    socket.off("call:timeout");
+    socket.off("call:callId");
     socket.on("call:accepted", async ({ callId }) => {
       console.log("Call accepted:", callId);
       dispatch(setCallConnected());
@@ -332,6 +374,15 @@ export const CallProvider = ({ children }) => {
     });
 
     // Call rejected
+    socket.off("webrtc:offer");
+    socket.off("webrtc:answer");
+    socket.off("webrtc:ice");
+    socket.off("call:accepted");
+    socket.off("call:rejected");
+    socket.off("call:ended");
+    socket.off("call:busy");
+    socket.off("call:timeout");
+    socket.off("call:callId");
     socket.on("call:rejected", () => {
       console.log("Call rejected");
       dispatch(setCallStatus("rejected"));
@@ -340,6 +391,15 @@ export const CallProvider = ({ children }) => {
     });
 
     // Call ended
+    socket.off("webrtc:offer");
+    socket.off("webrtc:answer");
+    socket.off("webrtc:ice");
+    socket.off("call:accepted");
+    socket.off("call:rejected");
+    socket.off("call:ended");
+    socket.off("call:busy");
+    socket.off("call:timeout");
+    socket.off("call:callId");
     socket.on("call:ended", () => {
       console.log("Call ended by other party");
       dispatch(setCallStatus("ended"));
@@ -348,6 +408,15 @@ export const CallProvider = ({ children }) => {
     });
 
     // Call busy
+    socket.off("webrtc:offer");
+    socket.off("webrtc:answer");
+    socket.off("webrtc:ice");
+    socket.off("call:accepted");
+    socket.off("call:rejected");
+    socket.off("call:ended");
+    socket.off("call:busy");
+    socket.off("call:timeout");
+    socket.off("call:callId");
     socket.on("call:busy", () => {
       dispatch(setCallStatus("busy"));
       cleanup();
@@ -355,6 +424,15 @@ export const CallProvider = ({ children }) => {
     });
 
     // Call timeout
+    socket.off("webrtc:offer");
+    socket.off("webrtc:answer");
+    socket.off("webrtc:ice");
+    socket.off("call:accepted");
+    socket.off("call:rejected");
+    socket.off("call:ended");
+    socket.off("call:busy");
+    socket.off("call:timeout");
+    socket.off("call:callId");
     socket.on("call:timeout", () => {
       dispatch(setCallStatus("timeout"));
       cleanup();
