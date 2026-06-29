@@ -36,6 +36,11 @@ export const SocketProvider = ({ children }) => {
     const socket = getSocket();
     if (!socket) return;
 
+    if (socket.connected) {
+      setIsConnected(true);
+      socket.emit("user:online", user._id);
+    }
+
     // Remove old listeners before adding new ones
     socket.off("connect");
     socket.off("disconnect");
