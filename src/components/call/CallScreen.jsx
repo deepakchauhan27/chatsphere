@@ -29,13 +29,13 @@ function CallScreen() {
     <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
       {isVideoCall ? (
         /* ── Video Call ─────────────────────────── */
-        <div className="relative flex-1 bg-black">
+        <div className="relative flex-1 bg-black overflow-hidden">
+          {" "}
           {/* Remote Video */}
           {remoteStream ? (
-            <VideoPlayer
-              stream={remoteStream}
-              className="w-full h-full object-cover"
-            />
+            <div className="w-full h-full flex items-center justify-center bg-black">
+              <VideoPlayer stream={remoteStream} />
+            </div>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gray-900">
               <Avatar
@@ -49,14 +49,12 @@ function CallScreen() {
               <CallTimer />
             </div>
           )}
-
           {/* Local Video PiP */}
           {localStream && !isVideoMuted && (
             <div className="absolute top-4 right-4 z-20 overflow-hidden rounded-2xl shadow-2xl border-2 border-yellow-300">
               <VideoPlayer stream={localStream} muted isLocal />
             </div>
           )}
-
           {/* Call Info */}
           <div className="absolute top-4 left-4 z-10 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2">
             <p className="text-white font-semibold text-sm">
@@ -64,7 +62,6 @@ function CallScreen() {
             </p>
             <CallTimer />
           </div>
-
           {/* Controls */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
             <CallControls />

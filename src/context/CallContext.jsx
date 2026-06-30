@@ -91,7 +91,11 @@ export const CallProvider = ({ children }) => {
             };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log(stream.getVideoTracks()[0]?.getSettings());
+      const videoTrack = stream.getVideoTracks()[0];
+
+      if (videoTrack) {
+        console.log("VIDEO SETTINGS:", videoTrack.getSettings());
+      }
       console.log(
         "LOCAL TRACKS:",
         stream.getTracks().map((t) => ({
