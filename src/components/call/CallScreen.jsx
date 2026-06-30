@@ -52,7 +52,7 @@ function CallScreen() {
 
           {/* Local Video PiP */}
           {localStream && !isVideoMuted && (
-            <div className="absolute top-4 right-4 z-10 rounded-2xl overflow-hidden shadow-2xl border-2 border-yellow-300">
+            <div className="absolute top-4 right-4 z-20 overflow-hidden rounded-2xl shadow-2xl border-2 border-yellow-300">
               <VideoPlayer stream={localStream} muted isLocal />
             </div>
           )}
@@ -66,7 +66,7 @@ function CallScreen() {
           </div>
 
           {/* Controls */}
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center px-4">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
             <CallControls />
           </div>
         </div>

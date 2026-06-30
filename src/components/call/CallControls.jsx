@@ -39,7 +39,7 @@ function CallControls() {
   };
 
   return (
-    <div className="flex items-center justify-center gap-4 py-6 bg-gray-900/80 backdrop-blur-sm rounded-2xl px-8">
+    <div className="flex items-center justify-center gap-3 py-4 px-5 bg-gray-900/80 backdrop-blur-md rounded-3xl">
       {/* Mute Audio */}
       <Tooltip text={isAudioMuted ? "Unmute" : "Mute"}>
         <button

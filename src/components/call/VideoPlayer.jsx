@@ -15,10 +15,10 @@ function VideoPlayer({ stream, muted = false, isLocal = false }) {
       autoPlay
       playsInline
       muted={muted || isLocal}
-      className={`rounded-2xl object-cover bg-gray-900 ${
+      className={`bg-black ${
         isLocal
-          ? "w-32 h-24 md:w-48 md:h-36 shadow-lg border-2 border-yellow-300"
-          : "w-full h-full"
+          ? "w-32 h-24 md:w-40 md:h-32 rounded-2xl object-cover"
+          : "w-full h-full object-contain"
       }`}
     />
   );
