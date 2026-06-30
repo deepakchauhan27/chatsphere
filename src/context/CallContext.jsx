@@ -91,6 +91,7 @@ export const CallProvider = ({ children }) => {
             };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log(stream.getVideoTracks()[0]?.getSettings());
       console.log(
         "LOCAL TRACKS:",
         stream.getTracks().map((t) => ({
@@ -100,6 +101,7 @@ export const CallProvider = ({ children }) => {
           readyState: t.readyState,
         })),
       );
+
       return stream;
     } catch (err) {
       console.error("Media error:", err);

@@ -20,6 +20,13 @@ function VideoPlayer({ stream, muted = false, isLocal = false }) {
           ? "w-32 h-24 md:w-40 md:h-32 rounded-2xl object-cover"
           : "w-full h-full object-contain"
       }`}
+      style={
+        !isLocal
+          ? {
+              transform: "scaleX(-1)",
+            }
+          : {}
+      }
     />
   );
 }
